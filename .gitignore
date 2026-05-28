@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+output/trends/*.json
+output/news/*.json
+output/scripts/*.json
+output/logs/*.json
+output/logs/*.log
+output/logs/cycle_counter.txt
