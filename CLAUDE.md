@@ -4,8 +4,10 @@
 Pipeline automatizado de contenido viral sobre IA. Corre **100% dentro de Claude Code** —
 sin llamadas a la API de Anthropic, sin costo de tokens más allá de tu suscripción.
 
-Flujo: Trends → 15 noticias (3 bloques) → Top 8-12 → guiones DOS MODOS →
-Real + HeyGen → metadata por plataforma → Notion → Telegram.
+Flujo: Trends → 15 noticias (3 bloques) → Top 8 → guiones DOS MODOS →
+metadata corta por plataforma → Notion → Telegram.
+
+Optimizado para bajo consumo de tokens (~130K/ciclo en Sonnet vs ~310K en Opus).
 
 ## Cómo correrlo
 
@@ -35,8 +37,9 @@ ai-content-office/
 └── .env                                 ← credenciales (no committear)
 ```
 
-El asistente (Claude Code, modelo actual de la sesión) ejecuta los pasos 0-5 inline
-usando WebSearch + WebFetch nativos. Los pasos 6-7 son llamadas HTTP puras vía Python.
+El asistente (Claude Code, modelo actual de la sesión) ejecuta los pasos 0-4 inline
+usando WebSearch + WebFetch nativos. Los pasos 5-6 son llamadas HTTP puras vía Python.
+Pipeline = 6 pasos (se eliminó el Adaptador para ahorrar tokens).
 
 ## Creador del contenido
 - Venezolano, 31 años, vive en Argentina
@@ -47,9 +50,9 @@ usando WebSearch + WebFetch nativos. Los pasos 6-7 son llamadas HTTP puras vía 
 - Estilo: disruptivo, directo, alta energía — sin violencia ni groserías
 
 ## Modelo
-La calidad del contenido depende del modelo seleccionado en la sesión de Claude Code
-que corra el slash command. **Recomendado: Opus 4.7** (mejor para guiones virales).
-Para tareas mecánicas (clasificar, adaptar HeyGen) Sonnet 4.6 también sirve.
+La calidad del contenido depende del modelo de la sesión que corra el slash command.
+- **Rutina automática cada 48h**: `claude-sonnet-4-8` (mejor relación calidad/tokens, ~5× más barato que Opus).
+- **Guion premium puntual**: correr `/ai-content-office MANUAL` desde sesión local con Opus.
 
 ## Noticias — 3 Bloques (15 total por ciclo)
 - BLOQUE A (5): Información relevante general de IA
@@ -57,25 +60,25 @@ Para tareas mecánicas (clasificar, adaptar HeyGen) Sonnet 4.6 también sirve.
 - BLOQUE C (6): Anthropic, Claude, Claude Code, Claude Cowork — PRIORIDAD
 
 ## Guiones — Cantidad y Modos
-- Total: entre 8 y 12 guiones por ciclo (score ≥70, o ≥60 si bloque C)
+- Total: máximo 8 guiones por ciclo (score ≥70, o ≥60 si bloque C). Calidad > cantidad.
 - MODO 1: Viral Corto 30-40 segundos
 - MODO 2: Viral Profundo 60-90 segundos
-- Cada noticia genera AMBOS modos en versión Real y versión HeyGen
+- Oraciones cortas y claras: el mismo guion sirve para grabar en vivo y para HeyGen (sin versión aparte).
 
-## Metadata por Plataforma
-- TikTok:    caption 80-100 palabras, casual, 15-20 hashtags
-- Instagram: caption 120-180 palabras, pulido, 20-25 hashtags
-- YouTube:   caption 150-200 palabras, búsqueda, 3-5 hashtags
-- Thumbnail: specs exactas con hex colors
+## Metadata por Plataforma (captions cortos para ahorrar tokens)
+- TikTok:    caption ≤40 palabras, casual, 15-20 hashtags
+- Instagram: caption ≤40 palabras, pulido, 20-25 hashtags
+- YouTube:   caption ≤40 palabras, búsqueda, 3-5 hashtags + 3 títulos
+- Thumbnail: specs cortas con hex colors
 
 ## Notion — Estructura
 - Página raíz: `AI Content Office` (creada, ID en `.env` como `NOTION_DATABASE_ID`)
 - Subcarpeta por ciclo: `GUIONES [DÍA] [DD-MM]`
-- Cada guion = 2 cards (Real + HeyGen) con guion completo, metadata 3 plataformas, thumbnail, checklist
+- Cada guion = 1 card (Modo 1 + Modo 2 + metadata 3 plataformas + thumbnail + checklist)
 
 ## Reglas
-1. Pipeline siempre secuencial (paso 0 → 7)
-2. Paso 7 (Telegram) SIEMPRE corre, incluso con errores previos
+1. Pipeline siempre secuencial (paso 0 → 6)
+2. Paso 6 (Telegram) SIEMPRE corre, incluso con errores previos
 3. Nunca hardcodear credenciales
 4. Outputs con timestamp en nombre
 5. Datos reales siempre vía WebFetch — nunca inventar URLs ni cifras

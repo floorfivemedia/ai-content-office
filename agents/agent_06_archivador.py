@@ -7,10 +7,11 @@ Uso:
 
 donde full_content.json contiene:
 {
-  "guiones":      [...],   # de output/scripts/scripts_master_*.json -> guiones
-  "adaptaciones": [...],   # de output/scripts/scripts_adapted_*.json -> adaptaciones
-  "metadata":     [...]    # de output/scripts/metadata_*.json -> metadata
+  "guiones":  [...],   # de output/scripts/scripts_master_*.json -> guiones
+  "metadata": [...]    # de output/scripts/metadata_*.json -> metadata (key: guion_id)
 }
+
+Una card por guion (Modo 1 + Modo 2 + metadata). Sin adaptaciones.
 """
 import json
 import os
@@ -99,7 +100,7 @@ def _todo(text):
     }
 
 
-def _build_card_blocks(guion, adapt, meta, formato):
+def _build_card_blocks(guion, meta):
     blocks = []
     hook = guion.get("modo_1", {}).get("hook") or guion.get("modo_2", {}).get("hook") or ""
     if hook:
@@ -110,18 +111,10 @@ def _build_card_blocks(guion, adapt, meta, formato):
     url = guion.get("noticia_url", "")
     blocks.append(_paragraph(f"{titulo}\n{url}"))
 
-    if formato == "Real":
-        blocks.append(_heading("📋 Modo 1 — Corto (30-40 seg)"))
-        blocks.append(_paragraph(adapt.get("1", {}).get("version_real", {}).get("guion", "")
-                                 or guion.get("modo_1", {}).get("guion_completo", "")))
-        blocks.append(_heading("📋 Modo 2 — Profundo (60-90 seg)"))
-        blocks.append(_paragraph(adapt.get("2", {}).get("version_real", {}).get("guion", "")
-                                 or guion.get("modo_2", {}).get("guion_completo", "")))
-    else:
-        blocks.append(_heading("🤖 Modo 1 — HeyGen (con pausas)"))
-        blocks.append(_paragraph(adapt.get("1", {}).get("version_heygen", {}).get("guion", "")))
-        blocks.append(_heading("🤖 Modo 2 — HeyGen (con pausas)"))
-        blocks.append(_paragraph(adapt.get("2", {}).get("version_heygen", {}).get("guion", "")))
+    blocks.append(_heading("📋 Modo 1 — Corto (30-40 seg)"))
+    blocks.append(_paragraph(guion.get("modo_1", {}).get("guion_completo", "")))
+    blocks.append(_heading("📋 Modo 2 — Profundo (60-90 seg)"))
+    blocks.append(_paragraph(guion.get("modo_2", {}).get("guion_completo", "")))
 
     tk = meta.get("tiktok", {})
     blocks.append(_heading("📊 TikTok"))
@@ -155,7 +148,6 @@ def _build_card_blocks(guion, adapt, meta, formato):
     blocks.append(_todo("TikTok subido — Fecha: ___"))
     blocks.append(_todo("Reels subido — Fecha: ___"))
     blocks.append(_todo("Shorts subido — Fecha: ___"))
-    blocks.append(_paragraph(f"Formato usado: {formato}"))
 
     return blocks
 
@@ -178,42 +170,36 @@ def archivar(payload):
     result["link_subcarpeta"] = sub.get("url")
 
     guiones = payload.get("guiones", [])
-    adapt_by_guion = {}
-    for a in payload.get("adaptaciones", []):
-        adapt_by_guion.setdefault(a.get("guion_id"), {})[str(a.get("modo"))] = a
-    meta_by_adapt = {m.get("adaptacion_id"): m for m in payload.get("metadata", [])}
+    meta_by_guion = {m.get("guion_id"): m for m in payload.get("metadata", [])}
 
     for g in guiones:
         titulo = g.get("noticia_titulo", "Sin título")
         bloque = g.get("bloque", "?")
         score = g.get("score_viral", 0)
-        adapt_map = adapt_by_guion.get(g.get("id"), {})
+        meta = meta_by_guion.get(g.get("id"), {})
 
-        for emoji, formato in (("🎬", "Real"), ("🤖", "HeyGen")):
-            card_title = f"{emoji} {titulo} — {formato}"
-            adapt1 = adapt_map.get("1", {})
-            meta1 = meta_by_adapt.get(adapt1.get("id"), {})
-            try:
-                blocks = _build_card_blocks(g, adapt_map, meta1, formato)
-                page = _create_page(result["subcarpeta_id"], card_title, blocks, icon_emoji=emoji)
-                result["cards_creadas"].append({
-                    "titulo": card_title,
-                    "notion_id": page.get("id"),
-                    "notion_url": page.get("url"),
-                    "bloque": bloque,
-                    "score": score,
-                    "status": "creada",
-                })
-                result["total_ok"] += 1
-                print(f"  ✓ {card_title}")
-            except Exception as e:
-                result["cards_creadas"].append({
-                    "titulo": card_title,
-                    "status": "error",
-                    "error": str(e),
-                })
-                result["total_error"] += 1
-                print(f"  ✗ {card_title}: {e}")
+        card_title = f"🎬 {titulo}"
+        try:
+            blocks = _build_card_blocks(g, meta)
+            page = _create_page(result["subcarpeta_id"], card_title, blocks, icon_emoji="🎬")
+            result["cards_creadas"].append({
+                "titulo": card_title,
+                "notion_id": page.get("id"),
+                "notion_url": page.get("url"),
+                "bloque": bloque,
+                "score": score,
+                "status": "creada",
+            })
+            result["total_ok"] += 1
+            print(f"  ✓ {card_title}")
+        except Exception as e:
+            result["cards_creadas"].append({
+                "titulo": card_title,
+                "status": "error",
+                "error": str(e),
+            })
+            result["total_error"] += 1
+            print(f"  ✗ {card_title}: {e}")
 
     return result
 
