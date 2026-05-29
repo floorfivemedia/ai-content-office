@@ -1,0 +1,38 @@
+name: Telegram Notify
+
+# Relay gratuito para notificaciones de Telegram.
+# El entorno cloud de Claude Code bloquea api.telegram.org.
+# Los runners de GitHub no tienen ese bloqueo.
+#
+# Disparado por: agent_07_notificador.py via GitHub API (workflow_dispatch)
+# cuando Telegram directo falla.
+
+on:
+  workflow_dispatch:
+    inputs:
+      summary_json:
+        description: 'Pipeline summary como JSON string'
+        required: false
+        default: ''
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install -q requests python-dotenv
+
+      - name: Send Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUMMARY_JSON: ${{ inputs.summary_json }}
+        run: |
+          printf '%s' "$SUMMARY_JSON" > /tmp/summary.json
+          python agents/agent_07_notificador.py /tmp/summary.json
