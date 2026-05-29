@@ -150,12 +150,17 @@ def main():
     summary = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     result = notificar(summary)
 
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
     print(json.dumps(result, ensure_ascii=False, indent=2))
     via = result.get("via")
     if result.get("telegram_ok"):
-        print(f"\n✅ Telegram OK via {via}")
+        print(f"\n[OK] Telegram enviado via {via}")
     else:
-        print(f"\n✗ Telegram falló: {result.get('error')}")
+        print(f"\n[FAIL] Telegram fallo: {result.get('error')}")
 
 
 if __name__ == "__main__":
