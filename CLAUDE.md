@@ -16,10 +16,10 @@ Optimizado para bajo consumo de tokens (~130K/ciclo en Sonnet vs ~310K en Opus).
 /ai-content-office MANUAL
 ```
 
-**Automático cada 48h** (Cloud Routine):
+**Automático cada 72h** (Cloud Routine):
 1. Ir a https://claude.ai/code/scheduled
 2. Nuevo task → comando: `/ai-content-office`
-3. Schedule: `0 9 */2 * *` (9 AM cada 2 días)
+3. Schedule: `0 13 */3 * *` (10 AM Buenos Aires cada 3 días)
 4. Working dir: este proyecto
 5. Activar
 
@@ -51,8 +51,8 @@ Pipeline = 6 pasos (se eliminó el Adaptador para ahorrar tokens).
 
 ## Modelo
 La calidad del contenido depende del modelo de la sesión que corra el slash command.
-- **Rutina automática cada 48h**: `claude-sonnet-4-8` (mejor relación calidad/tokens, ~5× más barato que Opus).
-- **Guion premium puntual**: correr `/ai-content-office MANUAL` desde sesión local con Opus.
+- **Rutina automática cada 72h**: `claude-opus-4-8` (máxima calidad de guion viral — prioridad: viralidad por encima de ahorro de tokens).
+- El guionista (Paso 3) es el paso crítico: Opus aporta el desarrollo creativo, hooks y CTA que Sonnet no alcanza.
 
 ## Noticias — 3 Bloques (15 total por ciclo)
 - BLOQUE A (5): Información relevante general de IA
